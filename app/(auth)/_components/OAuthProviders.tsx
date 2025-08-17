@@ -2,23 +2,29 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import GoogleIcon from "@/components/icons/GoogleIcon"
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { useAsyncAction } from "@/lib/use-async-action";
 
 export function OAuthProviders() {
     const { signIn } = useAuthActions();
 
+    const { execute: handleGoogleSignIn, loading: isGoogleLoading } = useAsyncAction();
+
     return (
         <>
-            <Button
+            <LoadingButton
                 className="w-full"
                 variant="outline"
                 type="button"
-                onClick={() => void signIn("google")}
+                loading={isGoogleLoading}
+                loadingText="Signing in with Google..."
+                icon={<GoogleIcon />}
+                onClick={() => handleGoogleSignIn(async () => {
+                    await signIn("google");
+                })}
             >
-
-                <GoogleIcon />
                 Login with Google
-            </Button>
+            </LoadingButton>
         </>
     );
 }

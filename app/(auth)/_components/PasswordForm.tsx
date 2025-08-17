@@ -4,10 +4,11 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthErrorAlert } from "./AuthErrorAlert";
+import { useAsyncAction } from "@/lib/use-async-action";
 
 interface PasswordFormProps {
     flow: "signIn" | "signUp";
@@ -18,8 +19,25 @@ export function PasswordForm({ flow }: PasswordFormProps) {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const { execute: handleSubmit, loading: isSubmitting } = useAsyncAction({
+        onSuccess: () => {
+            router.push("/");
+        },
+        onError: (error) => {
+            if (error.message.includes("InvalidAccountId")) {
+                setError("Invalid email account");
+            } else if (error.message.includes("InvalidSecret")) {
+                setError("Invalid password");
+            } else {
+                setError(error.message);
+            }
+        }
+    });
+
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setError(null); // Clear previous errors
+
         const formData = new FormData(e.currentTarget);
         formData.set("flow", flow);
 
@@ -33,31 +51,15 @@ export function PasswordForm({ flow }: PasswordFormProps) {
             return;
         }
 
-        try {
+        await handleSubmit(async () => {
             await signIn("password", formData);
-        } catch (error) {
-            if (error instanceof Error) {
-                if (error.message.includes("InvalidAccountId")) {
-                    setError("Invalid email account");
-                } else if (error.message.includes("InvalidSecret")) {
-                    setError("Invalid password");
-                } else {
-                    setError(error.message);
-                }
-
-
-            } else {
-                setError("An unexpected error occurred.");
-            }
-        }
-
-        router.push("/");
+        });
     };
 
     return (
         <>
             {error && <AuthErrorAlert message={error} />}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={onSubmit}>
                 <div className="grid gap-6">
                     <div className="grid gap-3">
                         <Label htmlFor="email">Email</Label>
@@ -94,9 +96,14 @@ export function PasswordForm({ flow }: PasswordFormProps) {
                             />
                         </div>
                     )}
-                    <Button type="submit" className="w-full">
+                    <LoadingButton
+                        type="submit"
+                        className="w-full"
+                        loading={isSubmitting}
+                        loadingText={flow === "signIn" ? "Signing in..." : "Creating account..."}
+                    >
                         {flow === "signIn" ? "Login" : "Sign Up"}
-                    </Button>
+                    </LoadingButton>
                 </div>
             </form>
         </>
