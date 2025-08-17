@@ -41,12 +41,69 @@ const buttonVariants = cva(
 interface LoadingButtonProps
     extends React.ComponentProps<"button">,
     VariantProps<typeof buttonVariants> {
+    /**
+     * When true, renders children as a Slot component instead of a button
+     * Useful for composition patterns where you need the button behavior
+     * but want to render a different element
+     */
     asChild?: boolean;
+
+    /**
+     * Controls the loading state of the button
+     * When true, shows spinner and disables the button
+     */
     loading?: boolean;
+
+    /**
+     * Optional text to display during loading state
+     * If not provided, falls back to the button's children
+     */
     loadingText?: string;
+
+    /**
+     * Optional icon to display when not in loading state
+     * Hidden during loading to avoid conflicts with spinner
+     */
     icon?: React.ReactNode;
 }
 
+/**
+ * LoadingButton Component
+ * 
+ * A reusable button component with built-in loading state management.
+ * Perfect for async operations like API calls, form submissions, and Convex mutations.
+ * 
+ * Features:
+ * - Automatic spinner display during loading
+ * - Disabled state during loading to prevent double-clicks
+ * - Customizable loading text
+ * - Icon support (hidden during loading)
+ * - All standard button variants and sizes
+ * - TypeScript support with proper prop typing
+ * 
+ * @example
+ * // Basic usage
+ * <LoadingButton loading={isLoading} onClick={handleClick}>
+ *   Save Changes
+ * </LoadingButton>
+ * 
+ * @example
+ * // With custom loading text and icon
+ * <LoadingButton 
+ *   loading={isSubmitting}
+ *   loadingText="Submitting..."
+ *   icon={<SaveIcon />}
+ *   onClick={handleSubmit}
+ * >
+ *   Submit Form
+ * </LoadingButton>
+ * 
+ * @example
+ * // Different variants
+ * <LoadingButton variant="destructive" loading={isDeleting}>
+ *   Delete Item
+ * </LoadingButton>
+ */
 const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
     (
         {
