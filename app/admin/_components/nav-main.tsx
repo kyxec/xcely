@@ -20,22 +20,14 @@ import {
 
 const items = [
     {
-        title: "Playground",
+        title: "Tutors",
         url: "#",
         icon: SquareTerminal,
         isActive: true,
         items: [
             {
-                title: "History",
-                url: "#",
-            },
-            {
-                title: "Starred",
-                url: "#",
-            },
-            {
-                title: "Settings",
-                url: "#",
+                title: "All Tutors",
+                url: "/admin/tutors",
             },
         ],
     },
@@ -46,18 +38,6 @@ const items = [
         items: [
             {
                 title: "General",
-                url: "#",
-            },
-            {
-                title: "Team",
-                url: "#",
-            },
-            {
-                title: "Billing",
-                url: "#",
-            },
-            {
-                title: "Limits",
                 url: "#",
             },
         ],

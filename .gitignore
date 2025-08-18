@@ -94,3 +94,6 @@ convex/_generated/
 
 # TypeScript
 *.tsbuildinfo
+
+# Cloudflare
+.open-next

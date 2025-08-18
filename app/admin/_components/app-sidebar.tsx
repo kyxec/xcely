@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { NavMain } from "./nav-main"
 import { NavProjects } from "./nav-projects"
@@ -13,13 +11,15 @@ import {
 } from "@/components/ui/sidebar"
 import { LocationSwitcher } from "./location-switcher"
 import { api } from "@/convex/_generated/api"
-import { Preloaded, usePreloadedQuery } from "convex/react"
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server"
+import { preloadQuery } from "convex/nextjs"
 
-export function AppSidebar({ preloadedUser, ...props }: { preloadedUser: Preloaded<typeof api.auth.getMe> } & React.ComponentProps<typeof Sidebar>) {
-    const user = usePreloadedQuery(preloadedUser);
-    if (!user) {
-        return null;
-    }
+export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const preloadedUser = await preloadQuery(
+        api.auth.getMe,
+        {},
+        { token: await convexAuthNextjsToken() },
+    );
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -31,7 +31,7 @@ export function AppSidebar({ preloadedUser, ...props }: { preloadedUser: Preload
                 <NavProjects />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={user} />
+                <NavUser preloadedUser={preloadedUser} />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

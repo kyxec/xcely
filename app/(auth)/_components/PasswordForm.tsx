@@ -4,7 +4,8 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LoadingButton } from "@/components/ui/loading-button";
+import { Button } from "@/components/ui/button";
+import { LoadingWrapper } from "@/components/ui/loading-wrapper";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthErrorAlert } from "./AuthErrorAlert";
@@ -61,6 +62,30 @@ export function PasswordForm({ flow }: PasswordFormProps) {
             {error && <AuthErrorAlert message={error} />}
             <form onSubmit={onSubmit}>
                 <div className="grid gap-6">
+                    {flow === "signUp" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid gap-3">
+                                <Label htmlFor="firstName">First Name</Label>
+                                <Input
+                                    id="firstName"
+                                    type="text"
+                                    name="firstName"
+                                    placeholder="John"
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-3">
+                                <Label htmlFor="lastName">Last Name</Label>
+                                <Input
+                                    id="lastName"
+                                    type="text"
+                                    name="lastName"
+                                    placeholder="Doe"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
                     <div className="grid gap-3">
                         <Label htmlFor="email">Email</Label>
                         <Input
@@ -96,14 +121,17 @@ export function PasswordForm({ flow }: PasswordFormProps) {
                             />
                         </div>
                     )}
-                    <LoadingButton
-                        type="submit"
-                        className="w-full"
+                    <LoadingWrapper
                         loading={isSubmitting}
                         loadingText={flow === "signIn" ? "Signing in..." : "Creating account..."}
                     >
-                        {flow === "signIn" ? "Login" : "Sign Up"}
-                    </LoadingButton>
+                        <Button
+                            type="submit"
+                            className="w-full"
+                        >
+                            {flow === "signIn" ? "Login" : "Sign Up"}
+                        </Button>
+                    </LoadingWrapper>
                 </div>
             </form>
         </>
