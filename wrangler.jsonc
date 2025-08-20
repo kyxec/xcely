@@ -37,8 +37,5 @@
     "observability": {
         "enabled": true,
         "head_sampling_rate": 1
-    },
-    "vars": {
-        "NEXT_PUBLIC_CONVEX_URL": "https://giant-bloodhound-175.convex.cloud"
     }
 }
