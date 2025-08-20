@@ -27,7 +27,7 @@ export default function AuthPage({
                     </CardTitle>
                     <CardDescription>
                         {flow === "signIn"
-                            ? "Login with your Apple or Google account"
+                            ? "Login with Google"
                             : "Sign up with your email and password"}
                     </CardDescription>
                 </CardHeader>
