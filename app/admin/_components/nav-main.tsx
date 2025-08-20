@@ -29,6 +29,10 @@ const items = [
                 title: "All Tutors",
                 url: "/admin/tutors",
             },
+            {
+                title: "Pending Tutors",
+                url: "/admin/pending-tutors",
+            }
         ],
     },
     {

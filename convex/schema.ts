@@ -19,10 +19,19 @@ export default defineSchema({
     role: v.optional(
       v.union(v.literal("admin"), v.literal("tutor"), v.literal("student")),
     ),
-  })
-    .index("email", ["email"])
+  }).index("email", ["email"])
     .index("phone", ["phone"])
     .index("by_role", ["role"]),
+
+  tutorCandidates: defineTable({
+    userId: v.id("users"),
+    status: v.union(
+      v.literal("applied"),
+      v.literal("pending")
+    ),
+  }).index("by_status", ["status"])
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"]),
 
   // Subject table: Stores main subject categories
   subjects: defineTable({
@@ -34,8 +43,7 @@ export default defineSchema({
   levels: defineTable({
     name: v.string(),
     subjectId: v.id("subjects"),
-  })
-    .index("by_subject", ["subjectId"])
+  }).index("by_subject", ["subjectId"])
     .index("by_subject_and_name", ["subjectId", "name"]),
 
   // User profiles table: Extended user information
@@ -45,14 +53,11 @@ export default defineSchema({
     bio: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
-  // Tutor qualifications: Links tutors to subjects and levels they can teach
-  tutorQualifications: defineTable({
-    tutorId: v.id("userProfiles"),
-    subjectId: v.id("subjects"),
+  // Tutor levels: Links tutors to subjects and levels they can teach
+  tutorLevels: defineTable({
+    tutorId: v.id("tutorProfiles"),
     levelId: v.id("levels"),
-  })
-    .index("by_tutor", ["tutorId"])
-    .index("by_subject", ["subjectId"])
+  }).index("by_tutor", ["tutorId"])
     .index("by_level", ["levelId"])
-    .index("by_tutor_and_subject", ["tutorId", "subjectId"]),
+    .index("by_tutor_and_level", ["tutorId", "levelId"]),
 });

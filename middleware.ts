@@ -3,17 +3,35 @@ import {
   createRouteMatcher,
   nextjsMiddlewareRedirect,
 } from "@convex-dev/auth/nextjs/server";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "./convex/_generated/api";
 
 const isLoginPage = createRouteMatcher(["/login"]);
 const isProtectedRoute = createRouteMatcher(["/", "/server"]);
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  // Redirect authenticated users away from login page
   if (isLoginPage(request) && (await convexAuth.isAuthenticated())) {
     return nextjsMiddlewareRedirect(request, "/");
   }
 
+  // Redirect unauthenticated users to login for protected routes
   if (isProtectedRoute(request) && !(await convexAuth.isAuthenticated())) {
     return nextjsMiddlewareRedirect(request, "/login");
+  }
+
+  // Admin route protection - require authentication first
+  if (isAdminRoute(request)) {
+    const token = await convexAuth.getToken();
+    if (!token) {
+      return nextjsMiddlewareRedirect(request, "/login");
+    }
+
+    const user = await fetchQuery(api.auth.getMe, {}, { token });
+    if (user?.role !== "admin") {
+      return nextjsMiddlewareRedirect(request, "/");
+    }
   }
 });
 
