@@ -113,4 +113,15 @@ export default defineSchema({
     readAt: v.optional(v.number()), // Timestamp when message was read
   }).index("by_conversation", ["conversationId"])
     .index("by_sender", ["senderId"]),
+
+  // Presence: Track user activity and online status
+  presence: defineTable({
+    userId: v.id("users"),
+    room: v.string(), // conversation ID or page identifier
+    data: v.string(), // JSON stringified presence data (typing, cursor position, etc.)
+    lastSeen: v.number(), // Timestamp of last activity
+  }).index("by_room", ["room"])
+    .index("by_user", ["userId"])
+    .index("by_room_and_user", ["room", "userId"])
+    .index("by_last_seen", ["lastSeen"]),
 });

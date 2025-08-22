@@ -10,6 +10,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { MessageSquare, Clock, CheckCircle, Users } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ConversationView } from "./ConversationView"
+import { usePresence } from "@/hooks/use-presence"
+import type { Id } from "@/convex/_generated/dataModel"
+
+type PresenceUser = {
+    userId: Id<"users">
+    userName: string
+    data: string
+    lastSeen: number
+    isOnline: boolean
+}
 
 type ConversationsData = FunctionReturnType<typeof api.messages.getMyConversations>
 type Conversation = ConversationsData[0]
@@ -83,6 +93,15 @@ type ConversationCardProps = {
 
 function ConversationCard({ conversation, userRole, onClick }: ConversationCardProps) {
     const otherPartyName = userRole === "student" ? conversation.tutorName : conversation.studentName
+    const otherUserId = userRole === "student" ? conversation.tutorId : conversation.studentId
+
+    // Check online status for this conversation and globally
+    const roomId = `conversation-${conversation._id}`
+    const { onlinePresence } = usePresence(roomId)
+    const { onlinePresence: globalPresence } = usePresence("global-messages")
+
+    const isOtherUserOnline = onlinePresence.some((p: PresenceUser) => p.userId === otherUserId) ||
+        globalPresence.some((p: PresenceUser) => p.userId === otherUserId)
 
     // Get initials for avatar
     const initials = otherPartyName
@@ -90,6 +109,8 @@ function ConversationCard({ conversation, userRole, onClick }: ConversationCardP
         .map((n) => n[0])
         .join("")
         .toUpperCase()
+
+    const lastMessageContent = conversation.lastMessage ? JSON.parse(conversation.lastMessage.content) : null
 
     return (
         <Card
@@ -102,7 +123,7 @@ function ConversationCard({ conversation, userRole, onClick }: ConversationCardP
                         <Avatar className="h-12 w-12">
                             <AvatarFallback className="bg-blue-100 text-blue-700 font-medium text-sm">{initials}</AvatarFallback>
                         </Avatar>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${isOtherUserOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -128,7 +149,7 @@ function ConversationCard({ conversation, userRole, onClick }: ConversationCardP
                                 <p className="text-sm text-gray-600 truncate mt-1 leading-relaxed">
                                     <span className="font-medium">{conversation.lastMessage.senderName}:</span>{" "}
                                     {conversation.lastMessage.messageType === "text"
-                                        ? JSON.parse(conversation.lastMessage.content).text
+                                        ? lastMessageContent?.text || "Message"
                                         : "📅 Booking message"}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2 flex items-center">

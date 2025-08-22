@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { FunctionReturnType } from "convex/server"
@@ -9,10 +9,20 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Send, Calendar, CheckCircle, X } from "lucide-react"
+import { ArrowLeft, Send, Calendar, CheckCircle, X, Check, CheckCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { InteractiveBookingMessage } from "./InteractiveBookingMessage"
+import { usePresence } from "@/hooks/use-presence"
+import type { Id } from "@/convex/_generated/dataModel"
+
+type PresenceUser = {
+    userId: Id<"users">
+    userName: string
+    data: string
+    lastSeen: number
+    isOnline: boolean
+}
 
 type ConversationsData = FunctionReturnType<typeof api.messages.getMyConversations>
 type Conversation = ConversationsData[0]
@@ -27,8 +37,25 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
     const [message, setMessage] = useState("")
     const [showTimeSuggestion, setShowTimeSuggestion] = useState(false)
     const [suggestedDateTime, setSuggestedDateTime] = useState<Date | undefined>()
+    const [isSending, setIsSending] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const messagesContainerRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const currentUserId = userRole === "student" ? conversation.studentId : conversation.tutorId
+    const otherUserId = userRole === "student" ? conversation.tutorId : conversation.studentId
+
+    // Presence system for online status and typing indicators
+    const roomId = `conversation-${conversation._id}`
+    const { onlinePresence, updateMyPresence } = usePresence(roomId)
+
+    // Also check global messages presence to see if user is online anywhere
+    const { onlinePresence: globalPresence } = usePresence("global-messages")
+
+    // Check if the other user is online (either in this conversation or globally in messages)
+    const otherUserPresence = onlinePresence.find((p: PresenceUser) => p.userId === otherUserId)
+    const otherUserGlobalPresence = globalPresence.find((p: PresenceUser) => p.userId === otherUserId)
+    const isOtherUserOnline = otherUserPresence !== undefined || otherUserGlobalPresence !== undefined
+    const isOtherUserTyping = otherUserPresence ? JSON.parse(otherUserPresence.data || '{}').typing === true : false
 
     const otherPartyName = userRole === "student" ? conversation.tutorName : conversation.studentName
     const initials = otherPartyName
@@ -46,42 +73,94 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
     const sendTextMessage = useMutation(api.messages.sendTextMessage)
     const markMessagesAsRead = useMutation(api.messages.markMessagesAsRead)
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior })
+        }
+    }, [])
 
+    // Scroll to bottom when messages load initially
     useEffect(() => {
         if (messages && messages.length > 0) {
-            scrollToBottom()
+            // Use instant scroll for initial load to avoid jarring effect
+            setTimeout(() => scrollToBottom("instant"), 100)
         }
-    }, [messages])
+    }, [messages, scrollToBottom])
 
     // Mark messages as read when viewing conversation
     useEffect(() => {
-        if (conversation._id) {
+        if (conversation._id && messages && messages.length > 0) {
             markMessagesAsRead({ conversationId: conversation._id })
         }
-    }, [conversation._id, markMessagesAsRead])
+    }, [conversation._id, messages, markMessagesAsRead])
+
+    // Set presence when entering conversation and focus input
+    useEffect(() => {
+        updateMyPresence({
+            inConversation: true,
+            conversationId: conversation._id,
+            status: "online",
+            lastSeen: Date.now()
+        })
+
+        // Focus the textarea when entering the conversation
+        setTimeout(() => textareaRef.current?.focus(), 300)
+
+        return () => {
+            updateMyPresence({
+                inConversation: false,
+                conversationId: undefined,
+                lastSeen: Date.now()
+            })
+        }
+    }, [conversation._id, updateMyPresence])
+
+    // Typing indicator effect
+    useEffect(() => {
+        if (message.length === 0) {
+            updateMyPresence({ typing: false })
+            return
+        }
+
+        updateMyPresence({ typing: true })
+        const timer = setTimeout(() => updateMyPresence({ typing: false }), 1000)
+        return () => clearTimeout(timer)
+    }, [message, updateMyPresence])
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return
+        if (!message.trim() || isSending) return
+
+        const messageToSend = message.trim()
+        setMessage("") // Clear immediately for better UX
+        setIsSending(true)
+
+        // Clear typing indicator immediately
+        updateMyPresence({ typing: false })
 
         try {
             await sendTextMessage({
                 conversationId: conversation._id,
-                content: message.trim(),
+                content: messageToSend,
             })
-            setMessage("")
+            // Scroll to bottom after sending
+            setTimeout(() => scrollToBottom("smooth"), 100)
+            // Refocus the textarea after sending
+            setTimeout(() => textareaRef.current?.focus(), 150)
         } catch (error) {
             console.error("Failed to send message:", error)
+            // Restore message on error
+            setMessage(messageToSend)
+        } finally {
+            setIsSending(false)
         }
     }
 
     const handleSuggestTime = async () => {
-        if (!suggestedDateTime) return
+        if (!suggestedDateTime || isSending) return
 
         const suggestionMessage = `I'd like to suggest we meet on ${suggestedDateTime.toLocaleDateString()} at ${suggestedDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}. Does this work for you?`
 
+        setIsSending(true)
         try {
             await sendTextMessage({
                 conversationId: conversation._id,
@@ -89,8 +168,13 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
             })
             setShowTimeSuggestion(false)
             setSuggestedDateTime(undefined)
+            setTimeout(() => scrollToBottom("smooth"), 100)
+            // Refocus the textarea after sending time suggestion
+            setTimeout(() => textareaRef.current?.focus(), 150)
         } catch (error) {
             console.error("Failed to send time suggestion:", error)
+        } finally {
+            setIsSending(false)
         }
     }
 
@@ -120,6 +204,19 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                         <div className="flex-1">
                             <h2 className="text-lg font-semibold text-gray-900">{otherPartyName}</h2>
                             <div className="flex items-center space-x-2">
+                                {/* Online status */}
+                                <div className="flex items-center space-x-1">
+                                    <div className={`w-2 h-2 rounded-full ${isOtherUserOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                    <span className="text-xs text-gray-600">
+                                        {isOtherUserOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
+
+                                {/* Typing indicator */}
+                                {isOtherUserTyping && (
+                                    <span className="text-xs text-blue-600 italic">typing...</span>
+                                )}
+
                                 {conversation.hasFreeMeeting && (
                                     <Badge variant="outline" className="text-xs border-green-200 text-green-700">
                                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -154,7 +251,7 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                             <MessageBubble
                                 key={msg._id}
                                 message={msg}
-                                isOwnMessage={msg.senderId === (userRole === "student" ? conversation.studentId : conversation.tutorId)}
+                                isOwnMessage={msg.senderId === currentUserId}
                                 senderName={msg.senderId === conversation.studentId ? conversation.studentName : conversation.tutorName}
                                 userRole={userRole}
                             />
@@ -193,7 +290,7 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                                     <Button
                                         size="sm"
                                         onClick={handleSuggestTime}
-                                        disabled={!suggestedDateTime}
+                                        disabled={!suggestedDateTime || isSending}
                                         className="bg-blue-600 hover:bg-blue-700"
                                     >
                                         <Calendar className="h-4 w-4 mr-2" />
@@ -207,10 +304,12 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                     <div className="flex space-x-3">
                         <div className="flex-1">
                             <Textarea
+                                ref={textareaRef}
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 placeholder="Type your message..."
                                 className="min-h-[60px] max-h-32 resize-none border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                disabled={isSending}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                         e.preventDefault()
@@ -222,7 +321,7 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                         <div className="flex flex-col space-y-2">
                             <Button
                                 onClick={handleSendMessage}
-                                disabled={!message.trim()}
+                                disabled={!message.trim() || isSending}
                                 size="sm"
                                 className="h-10 w-10 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
                             >
@@ -233,6 +332,7 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                                 size="sm"
                                 onClick={() => setShowTimeSuggestion(true)}
                                 title="Suggest meeting time"
+                                disabled={isSending}
                                 className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
                             >
                                 <Calendar className="h-4 w-4" />
@@ -285,9 +385,22 @@ function MessageBubble({ message, isOwnMessage, senderName, userRole }: MessageB
                     </div>
                 )}
 
-                <p className={`text-xs mt-2 opacity-70 ${isOwnMessage ? "text-right" : "text-left"}`}>
-                    {formatDistanceToNow(message._creationTime, { addSuffix: true })}
-                </p>
+                <div className={`flex items-center justify-between mt-2 ${isOwnMessage ? "text-right" : "text-left"}`}>
+                    <p className="text-xs opacity-70">
+                        {formatDistanceToNow(message._creationTime, { addSuffix: true })}
+                    </p>
+
+                    {/* Read status indicator - only show for own messages */}
+                    {isOwnMessage && (
+                        <div className="flex items-center ml-2" title={message.readAt ? "Read" : "Sent"}>
+                            {message.readAt ? (
+                                <CheckCheck className="h-3 w-3 text-blue-400" />
+                            ) : (
+                                <Check className="h-3 w-3 text-gray-300" />
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
