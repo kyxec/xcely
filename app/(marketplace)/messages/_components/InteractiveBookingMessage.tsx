@@ -1,23 +1,15 @@
 "use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
-import {
-    Calendar,
-    Clock,
-    CheckCircle,
-    X,
-    MessageSquare,
-    ChevronDown,
-    ChevronUp
-} from "lucide-react"
+import { Calendar, Clock, CheckCircle, X, MessageSquare, ChevronDown, ChevronUp } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
-import { Id } from "@/convex/_generated/dataModel"
+import type { Id } from "@/convex/_generated/dataModel"
 
 type BookingMessageContent = {
     type: "booking"
@@ -66,7 +58,7 @@ export function InteractiveBookingMessage({
         pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
         confirmed: "bg-green-100 text-green-800 border-green-200",
         canceled: "bg-red-100 text-red-800 border-red-200",
-        completed: "bg-blue-100 text-blue-800 border-blue-200"
+        completed: "bg-blue-100 text-blue-800 border-blue-200",
     }
 
     const handleAcceptBooking = async () => {
@@ -92,7 +84,7 @@ export function InteractiveBookingMessage({
         try {
             await suggestAlternativeTime({
                 bookingId: message.relatedBookingId,
-                suggestedTime: counterOfferTime.getTime()
+                suggestedTime: counterOfferTime.getTime(),
             })
             setShowCounterOffer(false)
             setCounterOfferTime(undefined)
@@ -104,19 +96,12 @@ export function InteractiveBookingMessage({
     return (
         <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} mb-4`}>
             <div className={`max-w-[85%] sm:max-w-[70%] ${isOwnMessage ? "ml-4" : "mr-4"}`}>
-                <Card className={`${isOwnMessage
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-white border-gray-200"
-                    } shadow-sm`}>
+                <Card className={`${isOwnMessage ? "bg-blue-50 border-blue-200" : "bg-white border-gray-200"} shadow-sm`}>
                     <CardContent className="p-4">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                                {!isOwnMessage && (
-                                    <p className="text-xs font-medium text-gray-600 mb-1">
-                                        {senderName}
-                                    </p>
-                                )}
+                                {!isOwnMessage && <p className="text-xs font-medium text-gray-600 mb-1">{senderName}</p>}
                                 <div className="flex items-center gap-2 mb-2">
                                     <MessageSquare className="h-4 w-4 text-blue-600" />
                                     <span className="font-medium text-gray-900">
@@ -124,25 +109,23 @@ export function InteractiveBookingMessage({
                                     </span>
                                 </div>
                             </div>
-                            <Badge className={`text-xs ${statusColor[messageContent.status]}`}>
-                                {messageContent.status}
-                            </Badge>
+                            <Badge className={`text-xs ${statusColor[messageContent.status]}`}>{messageContent.status}</Badge>
                         </div>
 
                         {/* Subject and Level */}
                         <div className="bg-gray-50 rounded-lg p-3 mb-3">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
                                 <span className="font-medium">Subject:</span>
-                                <span>{messageContent.subjectName} - {messageContent.levelName}</span>
+                                <span>
+                                    {messageContent.subjectName} - {messageContent.levelName}
+                                </span>
                             </div>
                         </div>
 
                         {/* Initial Message */}
                         {messageContent.initialMessage && (
                             <div className="mb-3">
-                                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
-                                    {messageContent.initialMessage}
-                                </p>
+                                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{messageContent.initialMessage}</p>
                             </div>
                         )}
 
@@ -152,21 +135,16 @@ export function InteractiveBookingMessage({
                                 <div className="flex items-center gap-2 mb-2">
                                     <Clock className="h-4 w-4 text-gray-600" />
                                     <span className="text-sm font-medium text-gray-700">
-                                        Suggested Time{messageContent.suggestedTimes.length > 1 ? 's' : ''}:
+                                        Suggested Time{messageContent.suggestedTimes.length > 1 ? "s" : ""}:
                                     </span>
                                 </div>
                                 <div className="space-y-1">
                                     {messageContent.suggestedTimes.map((timestamp, index) => (
-                                        <div
-                                            key={index}
-                                            className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-sm"
-                                        >
+                                        <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-sm">
                                             <div className="font-medium text-blue-900">
                                                 {format(new Date(timestamp), "EEEE, MMMM d, yyyy")}
                                             </div>
-                                            <div className="text-blue-700">
-                                                {format(new Date(timestamp), "h:mm a")}
-                                            </div>
+                                            <div className="text-blue-700">{format(new Date(timestamp), "h:mm a")}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -177,11 +155,7 @@ export function InteractiveBookingMessage({
                         {canTutorRespond && (
                             <div className="space-y-3">
                                 <div className="flex flex-col sm:flex-row gap-2">
-                                    <Button
-                                        onClick={handleAcceptBooking}
-                                        className="flex-1 bg-green-600 hover:bg-green-700"
-                                        size="sm"
-                                    >
+                                    <Button onClick={handleAcceptBooking} className="flex-1 bg-green-600 hover:bg-green-700" size="sm">
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Accept {isFreeMeeting ? "Meeting" : "Booking"}
                                     </Button>
@@ -199,7 +173,7 @@ export function InteractiveBookingMessage({
                                 <Button
                                     onClick={handleRejectBooking}
                                     variant="outline"
-                                    className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                                    className="w-full border-red-200 text-red-700 hover:bg-red-50 bg-transparent"
                                     size="sm"
                                 >
                                     <X className="h-4 w-4 mr-2" />
@@ -218,19 +192,10 @@ export function InteractiveBookingMessage({
                                     placeholder="When would work better for you?"
                                 />
                                 <div className="flex gap-2 mt-3">
-                                    <Button
-                                        onClick={handleCounterOffer}
-                                        disabled={!counterOfferTime}
-                                        size="sm"
-                                        className="flex-1"
-                                    >
+                                    <Button onClick={handleCounterOffer} disabled={!counterOfferTime} size="sm" className="flex-1">
                                         Send Suggestion
                                     </Button>
-                                    <Button
-                                        onClick={() => setShowCounterOffer(false)}
-                                        variant="outline"
-                                        size="sm"
-                                    >
+                                    <Button onClick={() => setShowCounterOffer(false)} variant="outline" size="sm">
                                         Cancel
                                     </Button>
                                 </div>
