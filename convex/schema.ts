@@ -60,4 +60,57 @@ export default defineSchema({
   }).index("by_tutor", ["tutorId"])
     .index("by_level", ["levelId"])
     .index("by_tutor_and_level", ["tutorId", "levelId"]),
+
+  // Conversations: Tracks conversations between students and tutors
+  conversations: defineTable({
+    studentId: v.id("users"), // Must be a student
+    tutorId: v.id("users"), // Must be a tutor
+    status: v.union(
+      v.literal("active"),
+      v.literal("archived")
+    ),
+  }).index("by_student", ["studentId"])
+    .index("by_tutor", ["tutorId"])
+    .index("by_student_and_tutor", ["studentId", "tutorId"])
+    .index("by_status", ["status"]),
+
+  // Bookings: Handles both free meetings and paid sessions
+  bookings: defineTable({
+    tutorId: v.id("users"),
+    studentId: v.id("users"),
+    levelId: v.id("levels"),
+    conversationId: v.id("conversations"), // Link to the conversation
+    suggestedTimes: v.optional(v.array(v.number())), // Array of timestamps for suggested meeting times
+    bookingType: v.union(
+      v.literal("freeMeeting"),
+      v.literal("paidSession")
+    ),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("canceled"),
+      v.literal("completed")
+    ),
+  }).index("by_tutor", ["tutorId"])
+    .index("by_student", ["studentId"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_status", ["status"])
+    .index("by_tutor_and_status", ["tutorId", "status"])
+    .index("by_student_and_status", ["studentId", "status"])
+    .index("by_student_and_tutor_and_type", ["studentId", "tutorId", "bookingType"]),
+
+  // Messages: Individual messages within conversations with dynamic content
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"), // Can be student or tutor
+    messageType: v.union(
+      v.literal("text"), // Regular text message
+      v.literal("booking"), // Booking-related message
+      v.literal("systemNotification") // System generated messages
+    ),
+    content: v.string(), // JSON stringified for dynamic content
+    relatedBookingId: v.optional(v.id("bookings")), // Link to booking if message is booking-related
+    readAt: v.optional(v.number()), // Timestamp when message was read
+  }).index("by_conversation", ["conversationId"])
+    .index("by_sender", ["senderId"]),
 });

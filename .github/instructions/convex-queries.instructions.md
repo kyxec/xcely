@@ -1,3 +1,7 @@
+---
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx"
+---
+
 Best Practices
 This is a list of best practices and common anti-patterns around using Convex. We recommend going through this list before broadly releasing your app to production. You may choose to try using all of these best practices from the start, or you may wait until you've gotten major parts of your app working before going through and adopting the best practices here.
 

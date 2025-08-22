@@ -1,3 +1,7 @@
+---
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx"
+---
+
 Module: nextjs
 Helpers for integrating Convex into Next.js applications using server rendering.
 

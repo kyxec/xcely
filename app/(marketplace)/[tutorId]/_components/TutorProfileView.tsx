@@ -1,14 +1,17 @@
 "use client";
 
-import { usePreloadedQuery, Preloaded } from "convex/react";
+import { useState } from "react";
+import { usePreloadedQuery, Preloaded, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Link from "next/link";
-import { ArrowLeft, GraduationCap } from "lucide-react";
+import { ArrowLeft, GraduationCap, MessageSquare } from "lucide-react";
+import { StartConversationForm } from "./StartConversationForm";
 
 // Type-safe types inferred from Convex functions
 type TutorProfile = FunctionReturnType<typeof api.tutors.getTutorForPublic>;
@@ -19,6 +22,12 @@ type TutorProfileViewProps = {
 
 export function TutorProfileView({ preloadedTutor }: TutorProfileViewProps) {
     const tutor: TutorProfile = usePreloadedQuery(preloadedTutor);
+    const [showMessageForm, setShowMessageForm] = useState(false);
+
+    // Check if the current user already had a free meeting with this tutor
+    const hasFreeMeeting = useQuery(api.messages.hasStudentHadFreeMeetingWithTutor,
+        tutor ? { tutorId: tutor._id } : "skip"
+    );
 
     if (!tutor) {
         return (
@@ -41,6 +50,11 @@ export function TutorProfileView({ preloadedTutor }: TutorProfileViewProps) {
 
     const fullName = `${tutor.firstName} ${tutor.lastName || ""}`.trim();
     const initials = `${tutor.firstName[0]}${tutor.lastName?.[0] || ""}`.toUpperCase();
+
+    const handleMessageSuccess = () => {
+        setShowMessageForm(false);
+        // Could show a success message or redirect to messages
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -76,9 +90,20 @@ export function TutorProfileView({ preloadedTutor }: TutorProfileViewProps) {
                                     )}
                                 </CardHeader>
                                 <CardContent className="pt-0">
-                                    <Button className="w-full" size="lg">
-                                        Contact Tutor
+                                    <Button
+                                        className="w-full"
+                                        size="lg"
+                                        onClick={() => setShowMessageForm(true)}
+                                        disabled={hasFreeMeeting === true}
+                                    >
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        {hasFreeMeeting === true ? "Already Contacted" : "Contact Tutor"}
                                     </Button>
+                                    {hasFreeMeeting === true && (
+                                        <p className="text-xs text-muted-foreground text-center mt-2">
+                                            You already have a free meeting with this tutor
+                                        </p>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -126,8 +151,14 @@ export function TutorProfileView({ preloadedTutor }: TutorProfileViewProps) {
                                     <p className="text-gray-600 mb-4">
                                         Interested in learning with {tutor.firstName}? Get in touch to discuss your learning goals and schedule.
                                     </p>
-                                    <Button size="lg" className="w-full sm:w-auto">
-                                        Send Message
+                                    <Button
+                                        size="lg"
+                                        className="w-full sm:w-auto"
+                                        onClick={() => setShowMessageForm(true)}
+                                        disabled={hasFreeMeeting === true}
+                                    >
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        {hasFreeMeeting === true ? "Already Contacted" : "Send Message"}
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -135,6 +166,24 @@ export function TutorProfileView({ preloadedTutor }: TutorProfileViewProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Message Form Dialog */}
+            <Dialog open={showMessageForm} onOpenChange={setShowMessageForm}>
+                <DialogContent className="max-w-lg">
+                    <StartConversationForm
+                        tutorId={tutor._id}
+                        tutorName={fullName}
+                        tutorLevels={tutor.levels.map(level => ({
+                            subject: level.subject,
+                            level: level.level,
+                            subjectId: level.subjectId,
+                            levelId: level.levelId,
+                        }))}
+                        onClose={() => setShowMessageForm(false)}
+                        onSuccess={handleMessageSuccess}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -1,11 +1,12 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Users, BookOpen } from "lucide-react"
+import { GraduationCap, Users, BookOpen, MessageSquare } from "lucide-react"
 import { fetchQuery } from "convex/nextjs"
 import { api } from "@/convex/_generated/api"
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server"
 import { UserMenu } from "./UserMenu"
+import { MessagesTabLink } from "./MessagesTabLink"
 
 export async function MarketplaceNav() {
     const user = await fetchQuery(api.auth.getMe, {}, {
@@ -31,6 +32,9 @@ export async function MarketplaceNav() {
                             <BookOpen className="h-4 w-4" />
                             <span>Find Tutors</span>
                         </Link>
+                        {user && (user.role === "student" || user.role === "tutor") && (
+                            <MessagesTabLink />
+                        )}
                         {!user || user.role !== "tutor" ? (
                             <Link href="/become-tutor" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors">
                                 <Users className="h-4 w-4" />

@@ -4,17 +4,28 @@ import Google, { GoogleProfile } from "@auth/core/providers/google";
 import { query } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, Google({
-    profile: (prof: GoogleProfile) => {
-      return {
-        id: prof.sub,
-        firstName: prof.given_name,
-        lastName: prof.family_name,
-        email: prof.email,
-        image: prof.picture,
-      };
-    },
-  })],
+  providers: [
+    Password({
+      profile(params) {
+        return {
+          email: params.email as string,
+          firstName: params.firstName as string,
+          lastName: params.lastName as string,
+        };
+      },
+    }),
+    Google({
+      profile: (prof: GoogleProfile) => {
+        return {
+          id: prof.sub,
+          firstName: prof.given_name,
+          lastName: prof.family_name,
+          email: prof.email,
+          image: prof.picture,
+        };
+      },
+    })
+  ],
   callbacks: {
     /**
      * This callback runs after a user signs in or updates their auth info.
