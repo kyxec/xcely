@@ -4,16 +4,15 @@ import React, { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { FunctionReturnType } from "convex/server"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Send, Calendar, Clock, CheckCircle, X } from "lucide-react"
+import { ArrowLeft, Send, Calendar, CheckCircle, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { InteractiveBookingMessage } from "./InteractiveBookingMessage"
-import { Id } from "@/convex/_generated/dataModel"
 
 type ConversationsData = FunctionReturnType<typeof api.messages.getMyConversations>
 type Conversation = ConversationsData[0]
@@ -132,7 +131,6 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
                                 isOwnMessage={msg.senderId === (userRole === "student" ? conversation.studentId : conversation.tutorId)}
                                 senderName={msg.senderId === conversation.studentId ? conversation.studentName : conversation.tutorName}
                                 userRole={userRole}
-                                conversationId={conversation._id}
                             />
                         ))
                     )}
@@ -216,14 +214,13 @@ export function ConversationView({ conversation, userRole, onBack }: Conversatio
 }
 
 type MessageBubbleProps = {
-    message: any // We'll type this properly based on the message structure
+    message: FunctionReturnType<typeof api.messages.getMessagesInConversation>[0]
     isOwnMessage: boolean
     senderName: string
     userRole: "student" | "tutor"
-    conversationId: Id<"conversations">
 }
 
-function MessageBubble({ message, isOwnMessage, senderName, userRole, conversationId }: MessageBubbleProps) {
+function MessageBubble({ message, isOwnMessage, senderName, userRole }: MessageBubbleProps) {
     const messageContent = JSON.parse(message.content)
 
     // Use InteractiveBookingMessage for booking messages
@@ -235,7 +232,6 @@ function MessageBubble({ message, isOwnMessage, senderName, userRole, conversati
                 isOwnMessage={isOwnMessage}
                 senderName={senderName}
                 userRole={userRole}
-                conversationId={conversationId}
             />
         )
     }
@@ -244,8 +240,8 @@ function MessageBubble({ message, isOwnMessage, senderName, userRole, conversati
     return (
         <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} mb-4`}>
             <div className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-3 ${isOwnMessage
-                    ? "bg-blue-600 text-white ml-4"
-                    : "bg-gray-100 text-gray-900 mr-4"
+                ? "bg-blue-600 text-white ml-4"
+                : "bg-gray-100 text-gray-900 mr-4"
                 }`}>
                 {!isOwnMessage && (
                     <p className="text-xs font-medium mb-1 opacity-70">

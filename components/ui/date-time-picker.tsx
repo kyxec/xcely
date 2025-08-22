@@ -23,7 +23,7 @@ export function DateTimePicker({
     date,
     onDateTimeChange,
     label = "Date & Time",
-    placeholder = "Select date and time",
+    // placeholder = "Select date and time",
     disabled = false
 }: DateTimePickerProps) {
     const [open, setOpen] = React.useState(false)
@@ -53,11 +53,6 @@ export function DateTimePicker({
         const newDateTime = new Date(date)
         newDateTime.setHours(hours, minutes, 0, 0)
         onDateTimeChange?.(newDateTime)
-    }
-
-    const formatDisplayDate = () => {
-        if (!selectedDate) return placeholder
-        return `${selectedDate.toLocaleDateString()} at ${time}`
     }
 
     return (

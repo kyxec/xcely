@@ -40,7 +40,6 @@ type InteractiveBookingMessageProps = {
     isOwnMessage: boolean
     senderName: string
     userRole: "student" | "tutor"
-    conversationId: Id<"conversations">
 }
 
 export function InteractiveBookingMessage({
@@ -49,7 +48,6 @@ export function InteractiveBookingMessage({
     isOwnMessage,
     senderName,
     userRole,
-    conversationId
 }: InteractiveBookingMessageProps) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [showCounterOffer, setShowCounterOffer] = useState(false)
@@ -63,7 +61,6 @@ export function InteractiveBookingMessage({
     const isFreeMeeting = messageContent.bookingType === "freeMeeting"
     const isPending = messageContent.status === "pending"
     const canTutorRespond = userRole === "tutor" && !isOwnMessage && isPending
-    const canStudentRespond = userRole === "student" && !isOwnMessage && isPending
 
     const statusColor = {
         pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -144,7 +141,7 @@ export function InteractiveBookingMessage({
                         {messageContent.initialMessage && (
                             <div className="mb-3">
                                 <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
-                                    "{messageContent.initialMessage}"
+                                    {messageContent.initialMessage}
                                 </p>
                             </div>
                         )}

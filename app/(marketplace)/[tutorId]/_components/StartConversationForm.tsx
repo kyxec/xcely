@@ -1,20 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, MessageSquare, X, Calendar } from "lucide-react";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { Loader2, MessageSquare } from "lucide-react";
 
 type StartConversationProps = {
     tutorId: Id<"users">;
@@ -33,7 +30,6 @@ export function StartConversationForm({
     tutorId,
     tutorName,
     tutorLevels,
-    onClose,
     onSuccess
 }: StartConversationProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,7 +162,7 @@ export function StartConversationForm({
                         className="resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Be specific about what you'd like to learn or achieve
+                        {`Be specific about what you'd like to learn or achieve`}
                     </p>
                 </div>
 

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Users, BookOpen, MessageSquare } from "lucide-react"
+import { GraduationCap, Users, BookOpen } from "lucide-react"
 import { fetchQuery } from "convex/nextjs"
 import { api } from "@/convex/_generated/api"
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server"
